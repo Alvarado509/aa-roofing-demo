@@ -126,7 +126,7 @@
     nav.main a{padding:10px 8px}
     .header-contact{padding-left:16px;gap:10px}
   }
-  @media (max-width:900px){
+  @media (max-width:1150px){
     nav.main{display:none}
     .header-in{gap:14px;padding-top:11px;padding-bottom:11px}
     .header-contact{border-left:0;padding-left:0;margin-left:auto;gap:10px}
@@ -228,7 +228,10 @@
   .sec-head p{color:var(--muted);margin:10px 0 0;font-size:1.02rem}
 
   /* Product cards — lively: icon chip, hover lift, top accent sweep */
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+  /* Exactly 4 cards: 4 across on desktop, 2×2 on tablet, stacked on phone — no empty row */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  @media (max-width:1020px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:560px){ .grid{grid-template-columns:1fr} }
   .card{
     background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
     padding:26px 24px;position:relative;overflow:hidden;box-shadow:var(--shadow);
@@ -440,7 +443,8 @@
   .foot-row a:hover{text-decoration:underline}
   .foot-hours{display:flex;justify-content:space-between;gap:14px;font-size:.93rem;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.16)}
   .foot-hours:last-child{border-bottom:0}
-  .foot-hours .fh-d{font-weight:650;color:#eaf2f9}
+  .foot-hours .fh-d{font-weight:650;color:#eaf2f9;flex:none}
+  .foot-hours span:last-child{white-space:nowrap;text-align:right}
   .foot-hours.closed span:last-child{color:#ffb25e;font-weight:700}
   .foot-bottom{
     border-top:1px solid rgba(255,255,255,.16);padding:20px 0 96px;
@@ -460,9 +464,13 @@
     box-shadow:0 12px 28px rgba(232,89,12,.45);
     transition:transform .25s ease,opacity .25s ease;
   }
-  /* Hidden while the hero is on screen, so it never covers the store card */
-  .fab-call.fab-hidden{opacity:0;pointer-events:none;transform:translateY(18px) scale(.92)}
-  .fab-call.fab-hidden::after{display:none}
+  /* Fully removed from display while the hero is on screen, so it never
+     covers the store card; JS adds .fab-show once the hero scrolls past */
+  @media (max-width:900px){
+    .fab-call{display:none}
+    .fab-call.fab-show{display:grid;animation:fabIn .25s ease both}
+  }
+  @keyframes fabIn{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
   .fab-call:hover{transform:scale(1.07)}
   .fab-call .lucide{width:26px;height:26px}
   .fab-call::after{
@@ -1016,20 +1024,22 @@
   (function(){
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* Floating call button: it only steps aside while the white store
-       card — the one carrying the "27 Google reviews" line — is actually
-       on screen, so it can never sit on top of that text. The card starts
-       below the fold, so the button is visible and tappable on arrival,
-       and it returns as soon as the card has scrolled past. */
+    /* Floating call button: it stays out of the layout entirely while
+       the hero — including the white store card with the "27 Google
+       reviews" line — is on screen, so it can never sit on top of that
+       text. It appears as soon as the hero has scrolled past, and the
+       hero itself carries its own call button in the meantime. */
     var fab = document.querySelector('.fab-call');
-    var storeCard = document.querySelector('.hero-card');
-    if (fab && storeCard && 'IntersectionObserver' in window) {
+    var hero = document.querySelector('.hero');
+    if (fab && hero && 'IntersectionObserver' in window) {
       var fabIO = new IntersectionObserver(function(entries){
         entries.forEach(function(e){
-          fab.classList.toggle('fab-hidden', e.isIntersecting);
+          fab.classList.toggle('fab-show', !e.isIntersecting);
         });
       }, { threshold: 0 });
-      fabIO.observe(storeCard);
+      fabIO.observe(hero);
+    } else if (fab) {
+      fab.classList.add('fab-show');
     }
 
     /* Soft reveal: blocks play one gentle fade-up as they arrive on
